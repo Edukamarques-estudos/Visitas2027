@@ -271,6 +271,44 @@
       opacity: 0.9;
     }
 
+    .th-fam-wrap {
+      display: flex;
+      align-items: center;
+      width: 100%;
+      height: 100%;
+    }
+
+    .th-fam-input {
+      flex: 1;
+      min-width: 0;
+      width: 100%;
+      background: transparent;
+      border: none;
+      color: var(--text-header-table);
+      font-weight: 700;
+      font-size: 9.5px;
+      text-align: center;
+      text-transform: uppercase;
+      letter-spacing: 0.2px;
+      padding: 2px 2px;
+      outline: none;
+    }
+
+    .th-fam-input::placeholder {
+      color: rgba(255, 255, 255, 0.55);
+      font-weight: 400;
+    }
+
+    .th-fam-input:focus {
+      background: rgba(255, 255, 255, 0.14);
+      border-radius: 3px;
+    }
+
+    .print-clean .th-fam-input {
+      font-size: 9px;
+      padding: 2px 1px;
+    }
+
     /* Dropdown flutuante de multi-seleção estilo Excel */
     .excel-filter-popover {
       position: fixed;
@@ -801,9 +839,15 @@
                 </button>
               </th>
               <th class="col-fam">
-                <button type="button" id="fltBtn_familia" class="th-filter-btn" onclick="openFilterMenu(event, 'familia', 'FAMÍLIA')" title="Filtrar">
-                  <span>&nbsp;</span><span class="th-arrow">▼</span>
-                </button>
+                <div class="th-fam-wrap">
+                  <input type="text" id="famHeaderInput" class="th-fam-input" value="" placeholder=""
+                    aria-label="Título da coluna"
+                    onchange="onFamHeaderChange(this.value)"
+                    oninput="onFamHeaderChange(this.value)" />
+                  <button type="button" id="fltBtn_familia" class="th-filter-btn" style="width:auto; padding:2px 3px; flex-shrink:0;" onclick="openFilterMenu(event, 'familia', getFamHeaderLabel())" title="Filtrar">
+                    <span class="th-arrow">▼</span>
+                  </button>
+                </div>
               </th>
               <th class="col-end">
                 <button type="button" id="fltBtn_endereco" class="th-filter-btn" onclick="openFilterMenu(event, 'endereco', 'ENDEREÇO')" title="Filtrar ENDEREÇO">
@@ -964,6 +1008,7 @@
     let schedules = {};
     let customTitles = {};
     let selectedTitleId = DEFAULT_TITLE_ID;
+    let famColumnHeader = "";
     let currentMonth = "";
     let currentYear = new Date().getFullYear();
     let isPrintMode = false;
@@ -992,6 +1037,12 @@
 
       const savedSelTitle = localStorage.getItem(DB_ROOT + "_selected_title");
       if (savedSelTitle) selectedTitleId = savedSelTitle;
+
+      const savedFamHeader = localStorage.getItem(DB_ROOT + "_fam_header");
+      if (savedFamHeader !== null) {
+        famColumnHeader = savedFamHeader;
+        document.getElementById("famHeaderInput").value = famColumnHeader;
+      }
 
       const now = new Date();
       currentYear = now.getFullYear();
@@ -1053,6 +1104,18 @@
           localStorage.setItem(DB_ROOT + "_titles", JSON.stringify(customTitles));
           renderTitlesUI();
         });
+
+        db.ref(DB_ROOT + "/famHeader").on("value", (snap) => {
+          const val = snap.val();
+          if (val !== null && val !== undefined) {
+            famColumnHeader = val;
+            localStorage.setItem(DB_ROOT + "_fam_header", famColumnHeader);
+            const inp = document.getElementById("famHeaderInput");
+            if (inp && document.activeElement !== inp) {
+              inp.value = famColumnHeader;
+            }
+          }
+        });
       } else {
         setSyncText("Salvo no aparelho");
       }
@@ -1073,6 +1136,21 @@
       if (useFirebase && db) {
         setSyncText("Salvando...");
         db.ref(DB_ROOT + "/schedules/" + currentMonth).set(schedules[currentMonth] || [])
+          .then(() => setSyncText("Salvo na nuvem"))
+          .catch(() => setSyncText("Salvo no aparelho"));
+      }
+    }
+
+    function getFamHeaderLabel() {
+      return (famColumnHeader && famColumnHeader.trim()) ? famColumnHeader.trim().toUpperCase() : "COLUNA";
+    }
+
+    function onFamHeaderChange(val) {
+      famColumnHeader = val;
+      localStorage.setItem(DB_ROOT + "_fam_header", famColumnHeader);
+      if (useFirebase && db) {
+        setSyncText("Salvando...");
+        db.ref(DB_ROOT + "/famHeader").set(famColumnHeader)
           .then(() => setSyncText("Salvo na nuvem"))
           .catch(() => setSyncText("Salvo no aparelho"));
       }
