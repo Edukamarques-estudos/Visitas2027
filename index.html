@@ -401,12 +401,20 @@
       font-size: 12px;
     }
 
+    :root {
+      --w-data: 12.5%;
+      --w-dia: 9.5%;
+      --w-hora: 11.5%;
+      --w-fam: 23.5%;
+      --w-end: 43%;
+    }
+
     table.excel-table td {
       border: 1px solid var(--border-grid);
       padding: 0;
       vertical-align: middle;
-      min-height: 26px;
-      height: 26px;
+      min-height: 25px;
+      height: auto;
       background-color: var(--bg-card);
     }
 
@@ -414,11 +422,11 @@
       background-color: var(--bg-zebra);
     }
 
-    .col-data { width: 13%; }
-    .col-dia  { width: 11%; }
-    .col-hora { width: 12%; }
-    .col-fam  { width: 29%; }
-    .col-end  { width: 35%; }
+    .col-data { width: var(--w-data); }
+    .col-dia  { width: var(--w-dia); }
+    .col-hora { width: var(--w-hora); }
+    .col-fam  { width: var(--w-fam); }
+    .col-end  { width: var(--w-end); }
     .col-act  { width: 20px; }
 
     .cell-input {
@@ -427,8 +435,8 @@
       border: none;
       background: transparent;
       color: var(--text-main);
-      font-size: 10px;
-      padding: 2px 3px;
+      font-size: 9.5px;
+      padding: 3px 2px;
       outline: none;
     }
 
@@ -437,7 +445,7 @@
     }
 
     .cell-day {
-      font-size: 10px;
+      font-size: 9.5px;
       font-weight: 600;
       text-align: center;
       color: var(--text-muted);
@@ -445,6 +453,28 @@
     }
 
     .cell-fam-input {
+      font-weight: 600;
+    }
+
+    /* Célula expansível (textarea auto-ajustável para nunca cortar texto no celular em pé) */
+    .cell-textarea {
+      width: 100%;
+      border: none;
+      background: transparent;
+      color: var(--text-main);
+      font-size: 9.2px;
+      line-height: 1.18;
+      padding: 3px 3px;
+      outline: none;
+      resize: none;
+      overflow: hidden;
+      display: block;
+      word-break: break-word;
+      overflow-wrap: anywhere;
+      min-height: 24px;
+    }
+
+    .cell-textarea.fam-ta {
       font-weight: 600;
     }
 
@@ -694,6 +724,16 @@
     .print-clean .th-filter-btn.filtered {
       color: var(--text-header-table) !important;
     }
+    .print-clean .cell-input,
+    .print-clean .cell-textarea {
+      font-size: 9px;
+      line-height: 1.15;
+      padding: 2.5px 2px;
+    }
+    .print-clean table.excel-table thead th {
+      font-size: 9px;
+      padding: 2px 1px;
+    }
   </style>
 </head>
 <body>
@@ -796,8 +836,9 @@
       </div>
 
       <div class="table-actions">
-        <div style="display:flex; gap:5px; flex-wrap:wrap;">
+        <div style="display:flex; gap:4px; flex-wrap:wrap;">
           <button class="btn-add-row" onclick="addScheduleRow()">+ Linha</button>
+          <button class="btn-add-row" onclick="sortMonthByDate()" title="Ordenar linhas por data crescente">Ordenar Data</button>
           <button class="btn-add-row" onclick="resetMonthDays()">Preencher Dias</button>
           <button class="btn-add-row hidden" id="btnClearFilters" onclick="clearAllFilters()" style="color:var(--danger); border-color:var(--danger);">Limpar Filtro</button>
         </div>
@@ -806,7 +847,7 @@
 
       <!-- Contatos WhatsApp -->
       <div class="contacts-footer">
-        <div class="contacts-label">Telefones:</div>
+        <div class="contacts-label">Telefones:):</div>
         <div class="contacts-grid">
           <a class="wa-btn" href="https://wa.me/5511984961782" target="_blank" rel="noopener">
             Leonildo • 11 98496-1782
@@ -878,6 +919,10 @@
     <div class="efp-title">
       <span id="efpHeaderLabel">Filtrar</span>
       <button type="button" class="efp-btn" style="padding:1px 6px; font-size:10px;" onclick="closeFilterMenu()">✕</button>
+    </div>
+    <div style="display:flex; gap:4px; border-bottom:1px solid var(--border-soft); padding-bottom:5px;">
+      <button type="button" class="efp-btn" style="flex:1; font-size:10px; padding:3px 4px;" onclick="sortFromPopover(true)">↑ Crescente</button>
+      <button type="button" class="efp-btn" style="flex:1; font-size:10px; padding:3px 4px;" onclick="sortFromPopover(false)">↓ Decrescente</button>
     </div>
     <label class="efp-item" style="font-weight:700; border-bottom:1px solid var(--border-soft); padding-bottom:5px;">
       <input type="checkbox" id="efpSelectAll" onchange="toggleFilterSelectAll(this.checked)" />
@@ -1506,6 +1551,100 @@
       updateRow(rowIndex, "familia", selectedName);
     }
 
+    function parseDateSortKey(dataStr) {
+      if (!dataStr || !dataStr.trim()) return Number.MAX_SAFE_INTEGER;
+      const parts = dataStr.trim().split("/");
+      if (parts.length >= 2) {
+        const d = parseInt(parts[0], 10);
+        const m = parseInt(parts[1], 10);
+        let y = parts.length === 3 ? parseInt(parts[2], 10) : currentYear;
+        if (!isNaN(d) && !isNaN(m)) {
+          if (y < 100) y += 2000;
+          return y * 10000 + m * 100 + d;
+        }
+      }
+      return Number.MAX_SAFE_INTEGER - 1;
+    }
+
+    function sortMonthByDate(ascending = true) {
+      const rows = getMonthRows();
+      rows.sort((a, b) => {
+        const ka = parseDateSortKey(a.data);
+        const kb = parseDateSortKey(b.data);
+        if (ka === kb) {
+          return (a.hora || "").localeCompare(b.hora || "", "pt-BR");
+        }
+        return ascending ? ka - kb : kb - ka;
+      });
+      persistMonthSchedule();
+      renderScheduleTable();
+    }
+
+    function sortFromPopover(ascending) {
+      const col = currentOpenFilterCol;
+      if (!col) return;
+      closeFilterMenu();
+
+      if (col === "data") {
+        sortMonthByDate(ascending);
+        return;
+      }
+
+      const rows = getMonthRows();
+      rows.sort((a, b) => {
+        const va = (a[col] || "").trim();
+        const vb = (b[col] || "").trim();
+        if (!va && !vb) return 0;
+        if (!va) return 1;
+        if (!vb) return -1;
+        const cmp = va.localeCompare(vb, "pt-BR", { numeric: true });
+        return ascending ? cmp : -cmp;
+      });
+      persistMonthSchedule();
+      renderScheduleTable();
+    }
+
+    function adjustDynamicColumnWidths(visibleRows) {
+      // Calcula a largura ideal para FAMÍLIA com base no maior nome visível, sem desperdício
+      let maxFamLen = 0;
+      visibleRows.forEach(r => {
+        const len = (r.familia || "").trim().length;
+        if (len > maxFamLen) maxFamLen = len;
+      });
+
+      // Colunas fixas: DATA (11.5%), DIA (8.5%), HORA (10.5%) -> sobram 69.5% para FAMÍLIA + ENDEREÇO
+      const wData = 11.5;
+      const wDia = 8.5;
+      const wHora = 10.5;
+      const remaining = 100 - (wData + wDia + wHora); // 69.5%
+
+      // Estimativa proporcional em % (mínimo 17% para caber nome médio + setinha, máximo 29% para sempre sobrar espaço amplo pro endereço)
+      let wFam = maxFamLen === 0 ? 20 : Math.min(29, Math.max(17, maxFamLen * 0.92 + 5));
+      if (isPrintMode) {
+        // No print não há setinha na célula, então a coluna família pode ficar ainda mais enxuta
+        wFam = maxFamLen === 0 ? 18 : Math.min(26, Math.max(15, maxFamLen * 0.85 + 2.5));
+      }
+      const wEnd = +(remaining - wFam).toFixed(2);
+
+      const rootStyle = document.documentElement.style;
+      rootStyle.setProperty("--w-data", wData + "%");
+      rootStyle.setProperty("--w-dia", wDia + "%");
+      rootStyle.setProperty("--w-hora", wHora + "%");
+      rootStyle.setProperty("--w-fam", wFam.toFixed(2) + "%");
+      rootStyle.setProperty("--w-end", wEnd + "%");
+    }
+
+    function autoResizeAllTextareas() {
+      document.querySelectorAll("textarea.cell-textarea").forEach(ta => {
+        ta.style.height = "auto";
+        ta.style.height = Math.max(24, ta.scrollHeight) + "px";
+      });
+    }
+
+    window.addEventListener("resize", () => {
+      autoResizeAllTextareas();
+    });
+
     function renderScheduleTable() {
       const tbody = document.getElementById("scheduleBody");
       const rows = getMonthRows();
@@ -1531,6 +1670,7 @@
       updateFilterIndicators();
 
       const visibleRows = lastNormalizedRows.filter(matchesActiveFilters);
+      adjustDynamicColumnWidths(visibleRows);
 
       if (visibleRows.length === 0) {
         tbody.innerHTML = `
@@ -1562,24 +1702,26 @@
           </td>
           <td>
             <div class="fam-cell-wrap">
-              <input type="text" list="familiesDatalist" class="cell-input cell-fam-input" placeholder=""
-                value="${escapeHtml(r.familia)}"
-                onchange="updateRow(${r.index}, 'familia', this.value)" />
+              <textarea rows="1" class="cell-textarea fam-ta"
+                oninput="this.style.height='auto';this.style.height=Math.max(24,this.scrollHeight)+'px';"
+                onchange="updateRow(${r.index}, 'familia', this.value)">${escapeHtml(r.familia)}</textarea>
               <select class="fam-pick-select" title="Rolar famílias cadastradas" onchange="onPickFamilyDropdown(${r.index}, this.value)">
                 ${buildRegisteredFamiliesOptions(r.familia)}
               </select>
             </div>
           </td>
           <td>
-            <input type="text" class="cell-input" placeholder=""
-              value="${escapeHtml(r.endereco)}"
-              onchange="updateRow(${r.index}, 'endereco', this.value)" />
+            <textarea rows="1" class="cell-textarea"
+              oninput="this.style.height='auto';this.style.height=Math.max(24,this.scrollHeight)+'px';"
+              onchange="updateRow(${r.index}, 'endereco', this.value)">${escapeHtml(r.endereco)}</textarea>
           </td>
           <td class="col-act">
             <button class="btn-del-row" title="Remover linha" onclick="removeScheduleRow(${r.index})">×</button>
           </td>
         </tr>
       `).join("");
+
+      requestAnimationFrame(autoResizeAllTextareas);
     }
 
     function updateRow(index, field, value) {
@@ -1626,12 +1768,14 @@
       closeFilterMenu();
       isPrintMode = true;
       document.getElementById("appRoot").classList.add("print-clean");
+      renderScheduleTable();
     }
 
     function exitPrintOnLogoClick() {
       if (!isPrintMode) return;
       isPrintMode = false;
       document.getElementById("appRoot").classList.remove("print-clean");
+      renderScheduleTable();
     }
 
     function escapeHtml(str) {
