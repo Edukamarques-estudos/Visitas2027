@@ -246,25 +246,159 @@
       letter-spacing: 0.2px;
     }
 
-    .th-filter-select {
+    .th-filter-btn {
       width: 100%;
       background: transparent;
       color: var(--text-header-table);
       border: none;
       font-weight: 700;
       font-size: 9.5px;
-      text-align: center;
-      text-align-last: center;
-      outline: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 2px;
       cursor: pointer;
-      padding: 1px 0;
+      padding: 2px 1px;
+      min-height: 18px;
     }
 
-    .th-filter-select option {
+    .th-filter-btn.filtered {
+      color: #fde047;
+    }
+
+    .th-arrow {
+      font-size: 7.5px;
+      opacity: 0.9;
+    }
+
+    /* Dropdown flutuante de multi-seleção estilo Excel */
+    .excel-filter-popover {
+      position: fixed;
+      z-index: 9999;
+      background: var(--bg-card);
+      color: var(--text-main);
+      border: 1.5px solid var(--border-grid);
+      border-radius: 8px;
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.22);
+      width: 215px;
+      max-width: 90vw;
+      padding: 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      font-size: 11.5px;
+    }
+
+    .efp-title {
+      font-weight: 700;
+      font-size: 11px;
+      color: var(--accent);
+      border-bottom: 1px solid var(--border-soft);
+      padding-bottom: 4px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .efp-list {
+      max-height: 190px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      padding: 2px 0;
+    }
+
+    .efp-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      padding: 3px 4px;
+      border-radius: 4px;
+      user-select: none;
+    }
+
+    .efp-item:hover {
+      background: var(--bg-zebra);
+    }
+
+    .efp-item input[type="checkbox"] {
+      width: 14px;
+      height: 14px;
+      cursor: pointer;
+      accent-color: var(--accent);
+      flex-shrink: 0;
+    }
+
+    .efp-item span {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-size: 11px;
+    }
+
+    .efp-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 6px;
+      border-top: 1px solid var(--border-soft);
+      padding-top: 6px;
+    }
+
+    .efp-btn {
+      padding: 4px 10px;
+      border-radius: 5px;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1px solid var(--border-soft);
+      background: var(--accent-soft);
+      color: var(--text-main);
+    }
+
+    .efp-btn.primary {
+      background: var(--accent);
+      color: #ffffff;
+      border-color: var(--accent);
+    }
+
+    [data-theme="dark"] .efp-btn.primary {
+      color: #0f172a;
+    }
+
+    /* Célula Família com setinha para rolar opções cadastradas */
+    .fam-cell-wrap {
+      display: flex;
+      align-items: center;
+      width: 100%;
+      height: 100%;
+      position: relative;
+    }
+
+    .fam-cell-wrap .cell-fam-input {
+      flex: 1;
+      min-width: 0;
+      padding-right: 1px;
+    }
+
+    .fam-pick-select {
+      width: 15px;
+      height: 100%;
+      border: none;
+      background: transparent;
+      color: var(--text-muted);
+      font-size: 9px;
+      cursor: pointer;
+      outline: none;
+      padding: 0;
+      flex-shrink: 0;
+    }
+
+    .fam-pick-select option {
       background-color: var(--bg-card);
       color: var(--text-main);
-      font-weight: 600;
-      text-align: left;
+      font-size: 12px;
     }
 
     table.excel-table td {
@@ -543,8 +677,7 @@
       position: static;
     }
     .print-clean .main-title-select,
-    .print-clean .month-select,
-    .print-clean .th-filter-select {
+    .print-clean .month-select {
       appearance: none;
       -webkit-appearance: none;
       -moz-appearance: none;
@@ -553,8 +686,13 @@
       background: transparent;
       padding: 0 1px;
     }
-    .print-clean .th-filter-select::-ms-expand {
-      display: none;
+    .print-clean .th-arrow,
+    .print-clean .fam-pick-select,
+    .print-clean .excel-filter-popover {
+      display: none !important;
+    }
+    .print-clean .th-filter-btn.filtered {
+      color: var(--text-header-table) !important;
     }
   </style>
 </head>
@@ -608,29 +746,29 @@
           <thead>
             <tr>
               <th class="col-data">
-                <select id="fltData" class="th-filter-select" onchange="onFilterChange('data', this.value)" title="Filtrar DATA">
-                  <option value="">DATA</option>
-                </select>
+                <button type="button" id="fltBtn_data" class="th-filter-btn" onclick="openFilterMenu(event, 'data', 'DATA')" title="Filtrar DATA">
+                  <span>DATA</span><span class="th-arrow">▼</span>
+                </button>
               </th>
               <th class="col-dia">
-                <select id="fltDia" class="th-filter-select" onchange="onFilterChange('dia', this.value)" title="Filtrar DIA">
-                  <option value="">DIA</option>
-                </select>
+                <button type="button" id="fltBtn_dia" class="th-filter-btn" onclick="openFilterMenu(event, 'dia', 'DIA')" title="Filtrar DIA">
+                  <span>DIA</span><span class="th-arrow">▼</span>
+                </button>
               </th>
               <th class="col-hora">
-                <select id="fltHora" class="th-filter-select" onchange="onFilterChange('hora', this.value)" title="Filtrar HORA">
-                  <option value="">HORA</option>
-                </select>
+                <button type="button" id="fltBtn_hora" class="th-filter-btn" onclick="openFilterMenu(event, 'hora', 'HORA')" title="Filtrar HORA">
+                  <span>HORA</span><span class="th-arrow">▼</span>
+                </button>
               </th>
               <th class="col-fam">
-                <select id="fltFamilia" class="th-filter-select" onchange="onFilterChange('familia', this.value)" title="Filtrar FAMÍLIA">
-                  <option value="">FAMÍLIA</option>
-                </select>
+                <button type="button" id="fltBtn_familia" class="th-filter-btn" onclick="openFilterMenu(event, 'familia', 'FAMÍLIA')" title="Filtrar">
+                  <span>&nbsp;</span><span class="th-arrow">▼</span>
+                </button>
               </th>
               <th class="col-end">
-                <select id="fltEndereco" class="th-filter-select" onchange="onFilterChange('endereco', this.value)" title="Filtrar ENDEREÇO">
-                  <option value="">ENDEREÇO</option>
-                </select>
+                <button type="button" id="fltBtn_endereco" class="th-filter-btn" onclick="openFilterMenu(event, 'endereco', 'ENDEREÇO')" title="Filtrar ENDEREÇO">
+                  <span>ENDEREÇO</span><span class="th-arrow">▼</span>
+                </button>
               </th>
               <th class="col-act"></th>
             </tr>
@@ -735,6 +873,23 @@
     </div>
   </div>
 
+  <!-- Popover de Filtro Multi-Seleção -->
+  <div id="excelFilterPopover" class="excel-filter-popover hidden" onclick="event.stopPropagation()">
+    <div class="efp-title">
+      <span id="efpHeaderLabel">Filtrar</span>
+      <button type="button" class="efp-btn" style="padding:1px 6px; font-size:10px;" onclick="closeFilterMenu()">✕</button>
+    </div>
+    <label class="efp-item" style="font-weight:700; border-bottom:1px solid var(--border-soft); padding-bottom:5px;">
+      <input type="checkbox" id="efpSelectAll" onchange="toggleFilterSelectAll(this.checked)" />
+      <span>(Selecionar Tudo)</span>
+    </label>
+    <div class="efp-list" id="efpOptionsList"></div>
+    <div class="efp-actions">
+      <button type="button" class="efp-btn" onclick="closeFilterMenu()">Cancelar</button>
+      <button type="button" class="efp-btn primary" onclick="applyFilterMenu()">OK</button>
+    </div>
+  </div>
+
   <!-- Firebase Realtime Database -->
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
@@ -768,7 +923,10 @@
     let currentYear = new Date().getFullYear();
     let isPrintMode = false;
     let isTitleCollapsed = false;
-    let activeFilters = { data: "", dia: "", hora: "", familia: "", endereco: "" };
+    // null = todas selecionadas (sem filtro); Array = lista de valores permitidos
+    let activeFilters = { data: null, dia: null, hora: null, familia: null, endereco: null };
+    let currentOpenFilterCol = null;
+    let lastNormalizedRows = [];
 
     const monthsList = [
       "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
@@ -1161,7 +1319,8 @@
 
     function onMonthChange() {
       currentMonth = document.getElementById("monthSelect").value;
-      activeFilters = { data: "", dia: "", hora: "", familia: "", endereco: "" };
+      activeFilters = { data: null, dia: null, hora: null, familia: null, endereco: null };
+      closeFilterMenu();
       if (!schedules[currentMonth] || !Array.isArray(schedules[currentMonth]) || schedules[currentMonth].length === 0) {
         schedules[currentMonth] = buildMonthDays(currentMonth);
         persistMonthSchedule();
@@ -1194,51 +1353,122 @@
       return null;
     }
 
-    function onFilterChange(col, val) {
-      activeFilters[col] = val;
+    document.addEventListener("click", () => {
+      closeFilterMenu();
+    });
+
+    function getUniqueColumnValues(colKey) {
+      const uniqueVals = [];
+      const seen = new Set();
+      let hasEmpty = false;
+
+      lastNormalizedRows.forEach(r => {
+        const v = (r[colKey] || "").trim();
+        if (!v) {
+          hasEmpty = true;
+        } else if (!seen.has(v)) {
+          seen.add(v);
+          uniqueVals.push(v);
+        }
+      });
+
+      const items = [];
+      if (hasEmpty) items.push({ value: "__EMPTY__", label: "(Vazios)" });
+      uniqueVals.forEach(v => items.push({ value: v, label: v }));
+      return items;
+    }
+
+    function openFilterMenu(event, colKey, label) {
+      event.stopPropagation();
+      if (isPrintMode) return;
+
+      const popover = document.getElementById("excelFilterPopover");
+      if (currentOpenFilterCol === colKey && !popover.classList.contains("hidden")) {
+        closeFilterMenu();
+        return;
+      }
+
+      currentOpenFilterCol = colKey;
+      document.getElementById("efpHeaderLabel").textContent = "Filtrar: " + label;
+
+      const items = getUniqueColumnValues(colKey);
+      const currentSelected = activeFilters[colKey]; // null = todos marcados
+
+      const listEl = document.getElementById("efpOptionsList");
+      listEl.innerHTML = items.map(item => {
+        const checked = currentSelected === null || currentSelected.includes(item.value);
+        return `
+          <label class="efp-item">
+            <input type="checkbox" class="efp-chk" value="${escapeHtml(item.value)}" ${checked ? "checked" : ""} onchange="syncSelectAllCheckbox()" />
+            <span title="${escapeHtml(item.label)}">${escapeHtml(item.label)}</span>
+          </label>
+        `;
+      }).join("");
+
+      syncSelectAllCheckbox();
+
+      popover.classList.remove("hidden");
+      const rect = event.currentTarget.getBoundingClientRect();
+      const popWidth = 215;
+      let left = rect.left;
+      if (left + popWidth > window.innerWidth - 8) {
+        left = Math.max(8, window.innerWidth - popWidth - 8);
+      }
+      popover.style.top = (rect.bottom + 4) + "px";
+      popover.style.left = left + "px";
+    }
+
+    function closeFilterMenu() {
+      const popover = document.getElementById("excelFilterPopover");
+      if (popover) popover.classList.add("hidden");
+      currentOpenFilterCol = null;
+    }
+
+    function toggleFilterSelectAll(checked) {
+      document.querySelectorAll("#efpOptionsList .efp-chk").forEach(cb => {
+        cb.checked = checked;
+      });
+    }
+
+    function syncSelectAllCheckbox() {
+      const chks = Array.from(document.querySelectorAll("#efpOptionsList .efp-chk"));
+      const allChecked = chks.length > 0 && chks.every(c => c.checked);
+      const selAll = document.getElementById("efpSelectAll");
+      if (selAll) selAll.checked = allChecked;
+    }
+
+    function applyFilterMenu() {
+      if (!currentOpenFilterCol) return;
+      const chks = Array.from(document.querySelectorAll("#efpOptionsList .efp-chk"));
+      const checkedVals = chks.filter(c => c.checked).map(c => c.value);
+
+      if (checkedVals.length === chks.length) {
+        activeFilters[currentOpenFilterCol] = null;
+      } else {
+        activeFilters[currentOpenFilterCol] = checkedVals;
+      }
+
+      closeFilterMenu();
       renderScheduleTable();
     }
 
     function clearAllFilters() {
-      activeFilters = { data: "", dia: "", hora: "", familia: "", endereco: "" };
+      activeFilters = { data: null, dia: null, hora: null, familia: null, endereco: null };
+      closeFilterMenu();
       renderScheduleTable();
     }
 
-    function populateFilterOptions(normalizedRows) {
-      const cols = [
-        { key: "data", elId: "fltData", label: "DATA" },
-        { key: "dia", elId: "fltDia", label: "DIA" },
-        { key: "hora", elId: "fltHora", label: "HORA" },
-        { key: "familia", elId: "fltFamilia", label: "FAMÍLIA" },
-        { key: "endereco", elId: "fltEndereco", label: "ENDEREÇO" }
-      ];
-
+    function updateFilterIndicators() {
       let hasAnyFilter = false;
-
-      cols.forEach(({ key, elId, label }) => {
-        const sel = document.getElementById(elId);
-        if (!sel) return;
-        const currentVal = activeFilters[key] || "";
-        if (currentVal) hasAnyFilter = true;
-
-        const uniqueVals = new Set();
-        let hasEmpty = false;
-        normalizedRows.forEach(r => {
-          const v = (r[key] || "").trim();
-          if (v) uniqueVals.add(v);
-          else hasEmpty = true;
-        });
-
-        let opts = `<option value="">${label}</option>`;
-        if (hasEmpty) {
-          opts += `<option value="__EMPTY__" ${currentVal === "__EMPTY__" ? "selected" : ""}>(Vazios)</option>`;
+      for (const key of ["data", "dia", "hora", "familia", "endereco"]) {
+        const btn = document.getElementById("fltBtn_" + key);
+        const isFiltered = activeFilters[key] !== null;
+        if (isFiltered) hasAnyFilter = true;
+        if (btn) {
+          if (isFiltered) btn.classList.add("filtered");
+          else btn.classList.remove("filtered");
         }
-        uniqueVals.forEach(v => {
-          opts += `<option value="${escapeHtml(v)}" ${currentVal === v ? "selected" : ""}>${escapeHtml(v)}</option>`;
-        });
-
-        sel.innerHTML = opts;
-      });
+      }
 
       const btnClear = document.getElementById("btnClearFilters");
       if (btnClear) {
@@ -1249,23 +1479,38 @@
 
     function matchesActiveFilters(normRow) {
       for (const key of ["data", "dia", "hora", "familia", "endereco"]) {
-        const fVal = activeFilters[key];
-        if (!fVal) continue;
+        const allowedList = activeFilters[key];
+        if (allowedList === null) continue;
         const cellVal = (normRow[key] || "").trim();
-        if (fVal === "__EMPTY__") {
-          if (cellVal !== "") return false;
-        } else {
-          if (cellVal !== fVal) return false;
-        }
+        const token = cellVal === "" ? "__EMPTY__" : cellVal;
+        if (!allowedList.includes(token)) return false;
       }
       return true;
+    }
+
+    function buildRegisteredFamiliesOptions(selectedValue) {
+      const sorted = Object.values(families).sort((a, b) =>
+        (a.name || "").localeCompare(b.name || "", "pt-BR")
+      );
+      let opts = `<option value="">-- Escolher família cadastrada --</option>`;
+      sorted.forEach(fam => {
+        if (!fam.name) return;
+        const isSel = selectedValue && fam.name.trim().toLowerCase() === selectedValue.trim().toLowerCase();
+        opts += `<option value="${escapeHtml(fam.name)}" ${isSel ? "selected" : ""}>${escapeHtml(fam.name)}</option>`;
+      });
+      return opts;
+    }
+
+    function onPickFamilyDropdown(rowIndex, selectedName) {
+      if (!selectedName) return;
+      updateRow(rowIndex, "familia", selectedName);
     }
 
     function renderScheduleTable() {
       const tbody = document.getElementById("scheduleBody");
       const rows = getMonthRows();
 
-      const normalized = rows.map((row, index) => {
+      lastNormalizedRows = rows.map((row, index) => {
         let famText = row.familia !== undefined ? row.familia : "";
         let endText = row.endereco !== undefined ? row.endereco : "";
         if (!famText && row.familyId && families[row.familyId]) {
@@ -1283,9 +1528,9 @@
         };
       });
 
-      populateFilterOptions(normalized);
+      updateFilterIndicators();
 
-      const visibleRows = normalized.filter(matchesActiveFilters);
+      const visibleRows = lastNormalizedRows.filter(matchesActiveFilters);
 
       if (visibleRows.length === 0) {
         tbody.innerHTML = `
@@ -1316,9 +1561,14 @@
               onchange="updateRow(${r.index}, 'hora', this.value)" />
           </td>
           <td>
-            <input type="text" list="familiesDatalist" class="cell-input cell-fam-input" placeholder=""
-              value="${escapeHtml(r.familia)}"
-              onchange="updateRow(${r.index}, 'familia', this.value)" />
+            <div class="fam-cell-wrap">
+              <input type="text" list="familiesDatalist" class="cell-input cell-fam-input" placeholder=""
+                value="${escapeHtml(r.familia)}"
+                onchange="updateRow(${r.index}, 'familia', this.value)" />
+              <select class="fam-pick-select" title="Rolar famílias cadastradas" onchange="onPickFamilyDropdown(${r.index}, this.value)">
+                ${buildRegisteredFamiliesOptions(r.familia)}
+              </select>
+            </div>
           </td>
           <td>
             <input type="text" class="cell-input" placeholder=""
@@ -1373,6 +1623,7 @@
     }
 
     function enterCleanPrint() {
+      closeFilterMenu();
       isPrintMode = true;
       document.getElementById("appRoot").classList.add("print-clean");
     }
